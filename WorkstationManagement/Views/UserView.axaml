@@ -1,0 +1,44 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:WorkstationManagement.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="WorkstationManagement.Views.UserView"
+             x:DataType="vm:UserViewModel">
+
+  <DockPanel>
+    <Menu DockPanel.Dock="Top">
+        <MenuItem Header="Logout" Background="LightBlue" Foreground="Black" FontWeight="Bold" Command="{Binding LogoutBtnClick}"/>
+    </Menu>
+    
+    <StackPanel Orientation="Horizontal" Spacing="20" HorizontalAlignment="Center" VerticalAlignment="Center">
+      <StackPanel>
+        <TextBlock Text="First Name" FontWeight="Bold" />
+        <TextBlock Text="{Binding CurrentUser.FirstName}" FontWeight="Bold" />
+      </StackPanel>
+
+      <StackPanel>
+        <TextBlock Text="Last Name" FontWeight="Bold" />
+        <TextBlock Text="{Binding CurrentUser.LastName}" FontWeight="Bold" />
+      </StackPanel>
+
+      <StackPanel>
+        <TextBlock Text="Assigned Work Positions" FontWeight="Bold" />
+        <ListBox ItemsSource="{Binding WorkPositions}" x:Name="Root">
+          <ListBox.ItemTemplate>
+              <DataTemplate>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Width="200" Text="{Binding Name}" FontWeight="Bold" />
+                </StackPanel>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </StackPanel>
+    </StackPanel>
+  </DockPanel>
+
+</UserControl>
+
+
+                    

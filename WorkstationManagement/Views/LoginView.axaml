@@ -1,0 +1,23 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:WorkstationManagement.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="WorkstationManagement.Views.LoginView"
+             x:DataType="vm:LoginViewModel">
+
+   <Grid>
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="10">
+            <TextBlock Text="Username:" />
+            <TextBox Width="200" Text="{Binding Username}" />
+
+            <TextBlock Text="Password:" />
+            <TextBox Width="200" PasswordChar = "*" Text="{Binding Password}" />
+            <TextBlock Text="{Binding Message}" FontWeight="Bold" />
+            <StackPanel>
+                <Button Content="Login" Command="{Binding OnLoginBtnClick}" />
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</UserControl>

@@ -1,0 +1,203 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:WorkstationManagement.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="WorkstationManagement.Views.AdminView"
+             x:DataType="vm:AdminViewModel">
+  <DockPanel>
+    <Menu DockPanel.Dock="Top">
+        <MenuItem Header="Logout" Background="LightBlue" Foreground="Black" FontWeight="Bold" Command="{Binding LogoutBtnClick}"/>
+    </Menu>
+
+    <StackPanel DockPanel.Dock="Top" Margin="10" Orientation="Horizontal" Spacing="20">
+        <StackPanel>
+            <TextBlock Text="First Name" FontWeight="Bold" />
+            <TextBox Width="200" Text="{Binding NewUserFirstName, Mode=TwoWay}" />
+        </StackPanel>
+
+        <StackPanel>
+            <TextBlock Text="Last Name" FontWeight="Bold" />
+            <TextBox Width="100" Text="{Binding NewUserLastName, Mode=TwoWay}" />
+        </StackPanel>
+
+        <StackPanel>
+            <TextBlock Text="Username" FontWeight="Bold" />
+            <TextBox Width="150" Text="{Binding NewUsername, Mode=TwoWay}" />
+        </StackPanel>
+
+        <StackPanel>
+            <TextBlock Text="Password" FontWeight="Bold" />
+            <TextBox Width="100" Text="{Binding NewUserPassword, Mode=TwoWay}" />
+        </StackPanel>
+
+        <StackPanel>
+            <TextBlock Text="Role" FontWeight="Bold" />
+            <ComboBox Width="150" SelectedItem="{Binding NewUserRoleName, Mode=TwoWay}" ItemsSource="{Binding Roles}" />
+        </StackPanel>
+
+        <StackPanel>
+            <TextBlock Text="{Binding AddUserErrorMessage}" FontWeight="Bold" />
+            <Button Content="Add User" Command="{Binding OnAddUserBtnClick}" Width="100" VerticalAlignment="Bottom" />
+        </StackPanel>
+    </StackPanel>
+
+    <StackPanel DockPanel.Dock="Top" Margin="10" Orientation="Horizontal" Spacing="20">
+        <StackPanel>
+            <TextBlock Text="Workstation Name" FontWeight="Bold" />
+            <TextBox Width="200" Text="{Binding NewWorkPositionName, Mode=TwoWay}" />
+        </StackPanel>
+
+        <StackPanel>
+            <TextBlock Text="Workstation Description" FontWeight="Bold" />
+            <TextBox Width="200" Text="{Binding NewWorkPositionDesc, Mode=TwoWay}" />
+        </StackPanel>
+
+        <StackPanel>
+            <TextBlock Text="{Binding AddWorkPositionErrorMessage}" FontWeight="Bold" />
+            <Button Content="Add Workstation" Command="{Binding OnAddWorkPositionBtnClick}" Width="170" VerticalAlignment="Bottom" />
+        </StackPanel>
+    </StackPanel>
+
+    <!-- Grid to split the remaining space into two columns -->
+    <Grid>
+        <!-- Column Definitions -->
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" /> 
+            <ColumnDefinition Width="*" /> 
+        </Grid.ColumnDefinitions>
+
+        <!-- First Column: Users List -->
+        <DockPanel Grid.Column="0">
+            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="10,10,10,10">
+                <TextBox Width="150" Watermark="Search" Text="{Binding SearchedUsername, Mode=TwoWay}" />
+            </StackPanel>
+
+            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="10,0,0,0">
+                <TextBlock Width="50" Text="ID" FontWeight="Bold" />
+                <TextBlock Width="170" Text="Username" FontWeight="Bold" />
+                <TextBlock Width="170" Text="First Name" FontWeight="Bold" />
+                <TextBlock Width="170" Text="Last Name" FontWeight="Bold" />
+                <TextBlock Width="100" Text="Role" FontWeight="Bold" />
+            </StackPanel>
+
+            <ScrollViewer VerticalScrollBarVisibility="Auto" DockPanel.Dock="Top" HorizontalScrollBarVisibility="Auto"
+                          Name="ScrollViewer">
+                <ListBox ItemsSource="{Binding UsersToShow}" x:Name="Root">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Width="50" Text="{Binding Id}" FontWeight="Bold" />
+                                <TextBlock Width="170" Text="{Binding Username}" />
+                                <TextBlock Width="170" Text="{Binding FirstName}" />
+                                <TextBlock Width="170" Text="{Binding LastName}" />
+                                <TextBlock Width="100" Text="{Binding Role.RoleName}" />
+                                <Button Content="Delete" 
+                                        Command="{Binding #Root.((vm:AdminViewModel)DataContext).OnDeleteBtnClick}" 
+                                        CommandParameter="{Binding .}" />
+                                <Button Content="Assign Work Position" 
+                                        Command="{Binding #Root.((vm:AdminViewModel)DataContext).OnAssignWorkPositionBtnCLick}" 
+                                        CommandParameter="{Binding .}"
+                                        Margin="10,0,0,0"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </ScrollViewer>
+
+            <Popup IsOpen="{Binding IsDeletePopupVisible}" PlacementTarget="{Binding #ScrollViewer}" Placement="Center">
+                <Border Background="White" BorderBrush="Black" BorderThickness="1" Padding="20">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Are you sure you want to delete this user?" />
+                        <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
+                            <Button Content="Yes" Command="{Binding OnConfirmDeleteBtnClick}" />
+                            <Button Content="No" Command="{Binding OnCancelDeleteBtnClick}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Popup>
+
+            <Popup IsOpen="{Binding IsAssignWorkPositionPopupVisible}" 
+                   PlacementTarget="{Binding #ScrollViewer}" 
+                   Placement="Center">
+                <Border Background="White" 
+                        BorderBrush="Black" 
+                        BorderThickness="1" 
+                        Padding="20">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Assign Work Position to User" FontWeight="Bold" />
+
+                        <ComboBox ItemsSource="{Binding WorkPositionNamesFromDb}" 
+                                  SelectedItem="{Binding NewWorkPositionNameForUserWorkPosition, Mode=TwoWay}" 
+                                  PlaceholderText="Select a work position"
+                                   />
+
+                        <TextBox Watermark="Product name" 
+                                  Text="{Binding NewUserWorkPositionProductName, Mode=TwoWay}" />
+                    
+                        <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
+                            <Button Content="Confirm" Command="{Binding OnConfirmAssignWorkPositionBtnClick}" />
+                            <Button Content="Cancel" Command="{Binding OnCancelAssignWorkPositionBtnClick}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Popup>
+        </DockPanel>
+
+        <!-- Second Column: Assignments List -->
+        <DockPanel Grid.Column="1" Margin="10,0,0,0">
+            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="10,0,0,0">
+                <TextBlock Width="200" Text="Username" FontWeight="Bold" />
+                <TextBlock Width="200" Text="Assigned Work Position" FontWeight="Bold" />
+                <TextBlock Width="200" Text="Product" FontWeight="Bold" />
+                <TextBlock Width="200" Text="Date" FontWeight="Bold" />
+            </StackPanel>
+
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Name="ScrollViewerUWP">
+                <ListBox ItemsSource="{Binding UserWorkPositionsToShow}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Width="200" Text="{Binding User.Username}" />
+                                <TextBlock Width="200" Text="{Binding WorkPosition.Name}" />
+                                <TextBlock Width="200" Text="{Binding ProductName}" />
+                                <TextBlock Width="200" Text="{Binding Date}" />
+                                <Button Content="Change" 
+                                        Command="{Binding #Root.((vm:AdminViewModel)DataContext).OnChangeBtnClick}" 
+                                        CommandParameter="{Binding .}" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </ScrollViewer>
+            
+            <Popup IsOpen="{Binding IsChagnePopUpVisible}" 
+                   PlacementTarget="{Binding #ScrollViewerUWP}" 
+                   Placement="Center">
+                <Border Background="White" 
+                        BorderBrush="Black" 
+                        BorderThickness="1" 
+                        Padding="20">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Change User Work Position" FontWeight="Bold" />
+
+                        <ComboBox ItemsSource="{Binding WorkPositionNamesFromDb}" 
+                                  SelectedItem="{Binding ChangedUserWorkPositionName, Mode=TwoWay}" 
+                                  PlaceholderText="Select a work position"
+                                   />
+
+                        <TextBox Watermark="Product name" 
+                                  Text="{Binding ChangedUserWorkPositionProductName, Mode=TwoWay}" />
+                    
+                        <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
+                            <Button Content="Confirm" Command="{Binding OnConfirmChangeBtnClick}" />
+                            <Button Content="Cancel" Command="{Binding OnCancelChangeBtnClick}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Popup>
+        </DockPanel>
+    </Grid>
+</DockPanel>
+</UserControl>
