@@ -7,6 +7,7 @@ using WorkstationManagement.Data;
 using WorkstationManagement.Models;
 using WorkstationManagement.Utils;
 using System;
+using WorkstationManagement.Migrations;
 
 namespace WorkstationManagement.ViewModels;
 
@@ -142,10 +143,16 @@ public partial class AdminViewModel : ViewModelBase{
     //-------------------------------------------------------------------------------------------------------------------------------------------------------
     
     //=======================================================================================================================================================
-    // NAVIGATION SERVICE   
-    // Used for navigation
+    // SERVICES 
     // WorkstationManagement/Utils/NavigationService.cs
+    // For navigation
     private NavigationService _navigationService;
+
+    // For user session
+    private UserSessionService _userSessionService;
+
+    // For database
+    private WorkstationManagementContext _dbContext;
     //-------------------------------------------------------------------------------------------------------------------------------------------------------
 
     //=======================================================================================================================================================
@@ -158,8 +165,10 @@ public partial class AdminViewModel : ViewModelBase{
     //=======================================================================================================================================================
     //  CONSTRUCTOR
     //=======================================================================================================================================================
-    public AdminViewModel(NavigationService navigationService){
+    public AdminViewModel(NavigationService navigationService, UserSessionService userSessionService, WorkstationManagementContext dbContext){
         _navigationService = navigationService;
+        _userSessionService = userSessionService;
+        _dbContext = dbContext;
         Roles = new ObservableCollection<string> { "User", "Admin" };
         LoadFromDB();
     }
@@ -174,16 +183,14 @@ public partial class AdminViewModel : ViewModelBase{
     // from the database will be displayed, only the data that is matching the search string
     // this way there is no need to read from the database after every search, just reset UsersToShow
     private void LoadFromDB(){
-        using (var db = new WorkstationManagementContext())
-            {
-                UsersFromDB = new ObservableCollection<User>(db.Users.Include(u => u.Role).ToList());
-                UsersToShow = UsersFromDB;
+        UsersFromDB = new ObservableCollection<User>(_dbContext.Users.Include(u => u.Role).ToList());
+        UsersToShow = UsersFromDB;
 
-                WorkPositionNamesFromDb = new ObservableCollection<string>(db.WorkPositions.Select(wp => wp.Name).ToList());
+        WorkPositionNamesFromDb = new ObservableCollection<string>(_dbContext.WorkPositions.Select(wp => wp.Name).ToList());
 
-                UserWorkPositionFromDB = new ObservableCollection<UserWorkPosition>(db.UserWorkPositions.Include(uwp => uwp.User).Include(uwp => uwp.WorkPosition).ToList());
-                UserWorkPositionsToShow = UserWorkPositionFromDB;
-            }
+        UserWorkPositionFromDB = new ObservableCollection<UserWorkPosition>(_dbContext.UserWorkPositions.Include(uwp => uwp.User).Include(uwp => uwp.WorkPosition).ToList());
+        UserWorkPositionsToShow = UserWorkPositionFromDB;
+            
     }
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -203,13 +210,10 @@ public partial class AdminViewModel : ViewModelBase{
         if(ValidateInputsUser())
         {
             CreateNewUserObjectFromInputs();
-            using(var db = new WorkstationManagementContext())
-            {
-                db.Users.Add(_newUserObject);
-                db.SaveChanges();
-                UsersFromDB = new ObservableCollection<User>(db.Users.Include(u => u.Role).ToList());
-                UsersToShow = UsersFromDB;
-            }
+            _dbContext.Users.Add(_newUserObject);
+            _dbContext.SaveChanges();
+            UsersFromDB = new ObservableCollection<User>(_dbContext.Users.Include(u => u.Role).ToList());
+            UsersToShow = UsersFromDB;
             ClearInputFieldsUser();
             AddUserErrorMessage = "";
         }
@@ -227,16 +231,14 @@ public partial class AdminViewModel : ViewModelBase{
     [RelayCommand]
     public void OnConfirmDeleteBtnClick()
     {
-        using(var db = new WorkstationManagementContext())
-            {
-                // Also removes UserWorkPosition with the UserId of the _userToRemove from the UserWorkPositions table
-                db.Users.Remove(_userToRemove);          
-                db.SaveChanges();
-                UsersFromDB.Remove(_userToRemove);
-                UsersToShow = UsersFromDB;
-                UserWorkPositionFromDB = new ObservableCollection<UserWorkPosition>(db.UserWorkPositions.Include(uwp => uwp.User).Include(uwp => uwp.WorkPosition).ToList());
-                UserWorkPositionsToShow = UserWorkPositionFromDB;
-            }
+        // Also removes UserWorkPosition with the UserId of the _userToRemove from the UserWorkPositions table
+        _dbContext.Users.Remove(_userToRemove);          
+        _dbContext.SaveChanges();
+        UsersFromDB.Remove(_userToRemove);
+        UsersToShow = UsersFromDB;
+        UserWorkPositionFromDB = new ObservableCollection<UserWorkPosition>(_dbContext.UserWorkPositions.Include(uwp => uwp.User).Include(uwp => uwp.WorkPosition).ToList());
+        UserWorkPositionsToShow = UserWorkPositionFromDB;
+            
         OnSearchedUsernameChanged(SearchedUsername);
         IsDeletePopupVisible = false;
     }
@@ -262,12 +264,9 @@ public partial class AdminViewModel : ViewModelBase{
         if(ValidateInputsWorkPosition())
         {
             CreateNewWorkPositionObjectFromInputs();
-            using(var db = new WorkstationManagementContext())
-            {
-                db.WorkPositions.Add(_newWorkPositionObject);
-                db.SaveChanges();
-                WorkPositionNamesFromDb = new ObservableCollection<string>(db.WorkPositions.Select(wp => wp.Name).ToList());
-            }
+            _dbContext.WorkPositions.Add(_newWorkPositionObject);
+            _dbContext.SaveChanges();
+            WorkPositionNamesFromDb = new ObservableCollection<string>(_dbContext.WorkPositions.Select(wp => wp.Name).ToList());
             ClearInputFieldsWorkPosition();
             AddWorkPositionErrorMessage = "New Work position created";
         }
@@ -299,20 +298,18 @@ public partial class AdminViewModel : ViewModelBase{
             // Logic of the function could also be implemented inside of this db scope  if needed
             // This way is just more readable
             CreateNewUserWorkPositionObjectFromInputs();
-            using(var db = new WorkstationManagementContext()) 
+            
+            var userWorkPosition =  _dbContext.UserWorkPositions.FirstOrDefault(uwp => uwp.UserId == _newUserWorkPositionUserId &&
+                                                                                uwp.WorkPositionId == _newUserWorkPositionWorkPositionId); 
+            if(userWorkPosition == null )
             {
-                var userWorkPosition =  db.UserWorkPositions.FirstOrDefault(uwp => uwp.UserId == _newUserWorkPositionUserId &&
-                                                                            uwp.WorkPositionId == _newUserWorkPositionWorkPositionId); 
-                if(userWorkPosition == null )
-                {
-                    db.UserWorkPositions.Add(_newUserWorkPositionObject);
-                    db.SaveChanges();
-                    UserWorkPositionFromDB = new ObservableCollection<UserWorkPosition>(db.UserWorkPositions.Include(uwp => uwp.User).Include(uwp => uwp.WorkPosition).ToList());
-                    UserWorkPositionsToShow = UserWorkPositionFromDB;
-                    IsAssignWorkPositionPopupVisible = false;
-                    ClearInputFieldsUserWorkPosition();
-                }
-            }
+                _dbContext.UserWorkPositions.Add(_newUserWorkPositionObject);
+                _dbContext.SaveChanges();
+                UserWorkPositionFromDB = new ObservableCollection<UserWorkPosition>(_dbContext.UserWorkPositions.Include(uwp => uwp.User).Include(uwp => uwp.WorkPosition).ToList());
+                UserWorkPositionsToShow = UserWorkPositionFromDB;
+                IsAssignWorkPositionPopupVisible = false;
+                ClearInputFieldsUserWorkPosition();
+            } 
         }
     }
 
@@ -345,16 +342,14 @@ public partial class AdminViewModel : ViewModelBase{
             IsChagnePopUpVisible = true;
         else
         {
-            using(var db = new WorkstationManagementContext())
-            {
-                var UserWorkPositionToChange = db.UserWorkPositions.FirstOrDefault(uwp => uwp.Id == _userWorkPositionToChangeId);
-                UserWorkPositionToChange.Date = DateTime.Now;
-                UserWorkPositionToChange.ProductName = ChangedUserWorkPositionProductName;  
-                UserWorkPositionToChange.WorkPositionId = db.WorkPositions.Where(wp => wp.Name == ChangedUserWorkPositionName).Select(wp => wp.Id).FirstOrDefault();
-                db.SaveChanges();
-                UserWorkPositionFromDB = new ObservableCollection<UserWorkPosition>(db.UserWorkPositions.Include(uwp => uwp.User).Include(uwp => uwp.WorkPosition).ToList());
-                UserWorkPositionsToShow = UserWorkPositionFromDB;
-            }
+            var UserWorkPositionToChange = _dbContext.UserWorkPositions.FirstOrDefault(uwp => uwp.Id == _userWorkPositionToChangeId);
+            UserWorkPositionToChange.Date = DateTime.Now;
+            UserWorkPositionToChange.ProductName = ChangedUserWorkPositionProductName;  
+            UserWorkPositionToChange.WorkPositionId = _dbContext.WorkPositions.Where(wp => wp.Name == ChangedUserWorkPositionName).Select(wp => wp.Id).FirstOrDefault();
+            _dbContext.SaveChanges();
+            UserWorkPositionFromDB = new ObservableCollection<UserWorkPosition>(_dbContext.UserWorkPositions.Include(uwp => uwp.User).Include(uwp => uwp.WorkPosition).ToList());
+            UserWorkPositionsToShow = UserWorkPositionFromDB;
+            
             IsChagnePopUpVisible = false;
         }
     }
@@ -373,7 +368,8 @@ public partial class AdminViewModel : ViewModelBase{
     [RelayCommand]
     public void LogoutBtnClick()
     {
-        _navigationService.NavigateTo<LoginViewModel>(null);
+        _userSessionService.CurrentUser = null;
+        _navigationService.NavigateTo<LoginViewModel>();
     }
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -431,7 +427,7 @@ public partial class AdminViewModel : ViewModelBase{
             AddUserErrorMessage = "Role is empty";
             return false;
         }
-        bool PasswordGood;
+        bool PasswordGood = true;
         // WorkstationManagement.Utils.Helpers.cs
         (AddUserErrorMessage, PasswordGood) = Helper.CheckStrength(NewUserPassword);
                 bool UsernameUnique = CheckUsernameIsUnique();
@@ -462,35 +458,29 @@ public partial class AdminViewModel : ViewModelBase{
 
     private bool CheckUsernameIsUnique()
     {
-        using (var db = new WorkstationManagementContext())
+        var user =  _dbContext.Users.FirstOrDefault(u => u.Username == NewUsername);
+        if(user == null)
         {
-            var user =  db.Users.FirstOrDefault(u => u.Username == NewUsername);
-            if(user == null)
-            {
-                return true;
-            }
-            else
-            {
-                AddUserErrorMessage = "Username is in use";
-                return false;
-            }
+            return true;
         }
+        else
+        {
+            AddUserErrorMessage = "Username is in use";
+            return false;
+        }  
     }
 
     private bool CheckWorkpositionIsUnique()
     {
-        using (var db = new WorkstationManagementContext())
+        var workPosition =  _dbContext.WorkPositions.FirstOrDefault(wp => wp.Name == NewWorkPositionName);
+        if(workPosition == null)
         {
-            var workPosition =  db.WorkPositions.FirstOrDefault(wp => wp.Name == NewWorkPositionName);
-            if(workPosition == null)
-            {
-                return true;
-            }
-            else
-            {
-                AddWorkPositionErrorMessage = "Work position already exists";
-                return false;
-            }
+            return true;
+        }
+        else
+        {
+            AddWorkPositionErrorMessage = "Work position already exists";
+            return false;
         }
     }
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -526,11 +516,8 @@ public partial class AdminViewModel : ViewModelBase{
 
      private void CreateNewUserWorkPositionObjectFromInputs()
     {
-        using (var db = new WorkstationManagementContext())
-        {
-            _newUserWorkPositionWorkPositionId = db.WorkPositions.Where(wp => wp.Name == NewWorkPositionNameForUserWorkPosition).Select(wp => wp.Id).FirstOrDefault();  
-        }
-
+        _newUserWorkPositionWorkPositionId = _dbContext.WorkPositions.Where(wp => wp.Name == NewWorkPositionNameForUserWorkPosition).Select(wp => wp.Id).FirstOrDefault();  
+        
         _newUserWorkPositionObject = new UserWorkPosition
         {
             ProductName = NewUserWorkPositionProductName,

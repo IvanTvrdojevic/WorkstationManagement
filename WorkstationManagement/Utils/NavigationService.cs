@@ -32,9 +32,4 @@ public class NavigationService{
     public void NavigateTo<TViewModel>() where TViewModel : ViewModelBase{
         CurrentViewModel = BuildViewModel(typeof(TViewModel));
     }
-
-    public void  NavigateTo<TViewModel>(User? currentUser) where TViewModel : ViewModelBase{
-        CurrentUser = currentUser;
-        CurrentViewModel = BuildViewModel(typeof(TViewModel));
-    }
 }

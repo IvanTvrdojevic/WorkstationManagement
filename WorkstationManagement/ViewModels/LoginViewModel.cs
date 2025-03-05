@@ -19,17 +19,25 @@ public partial class LoginViewModel : ViewModelBase{
     private string _message = "";
 
     //=======================================================================================================================================================
-    // NAVIGATION SERVICE   
-    // Used for navigation
+    // SERVICES 
     // WorkstationManagement/Utils/NavigationService.cs
+    // For navigation
     private NavigationService _navigationService;
+
+    // For user session
+    private UserSessionService _userSessionService;
+
+    // For database
+    private WorkstationManagementContext _dbContext;
     //-------------------------------------------------------------------------------------------------------------------------------------------------------
 
     //=======================================================================================================================================================
     //  CONSTRUCTOR
     //=======================================================================================================================================================
-    public LoginViewModel(NavigationService navigationService, CurrentUser currentUser){
+    public LoginViewModel(NavigationService navigationService, UserSessionService userSessionService, WorkstationManagementContext dbContext){
         _navigationService = navigationService;
+        _userSessionService = userSessionService;
+        _dbContext = dbContext;
     }
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -42,26 +50,23 @@ public partial class LoginViewModel : ViewModelBase{
     public void OnLoginBtnClick(){
         // Implemented in WorkstationManagement.Utils.Helpers.cs
         string hashedPassword = Helper.ComputeSha256Hash(Password);
-        using (var db = new WorkstationManagementContext())
+
+        var user =  _dbContext.Users.Include(u => u.Role).FirstOrDefault(u => u.Username == Username && u.Password == hashedPassword);
+        if(user != null)
         {
-            var user =  db.Users.Include(u => u.Role).FirstOrDefault(u => u.Username == Username && u.Password == hashedPassword);
-            if(user != null)
+            _userSessionService.CurrentUser = user;
+            if (user.Role.RoleName == "User")
             {
-                if (user.Role.RoleName == "User")
-                {
-                    db.Dispose();
-                    _navigationService.NavigateTo<UserViewModel>(user);
-                }   
-                else if (user.Role.RoleName == "Admin")
-                {
-                    db.Dispose();
-                    _navigationService.NavigateTo<AdminViewModel>(user);
-                }
-            }
-            else
+                _navigationService.NavigateTo<UserViewModel>();
+            }   
+            else if (user.Role.RoleName == "Admin")
             {
-                Message = "Invalid username or password.";
+                _navigationService.NavigateTo<AdminViewModel>();
             }
+        }
+        else
+        {
+            Message = "Invalid username or password.";
         }
     }
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

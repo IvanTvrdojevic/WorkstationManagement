@@ -27,18 +27,26 @@ public partial class UserViewModel : ViewModelBase{
     private ObservableCollection<WorkPosition> _workPositions;
 
     //=======================================================================================================================================================
-    // NAVIGATION SERVICE   
-    // Used for navigation
+    // SERVICES 
     // WorkstationManagement/Utils/NavigationService.cs
+    // For navigation
     private NavigationService _navigationService;
+
+    // For user session
+    private UserSessionService _userSessionService;
+
+    // For database
+    private WorkstationManagementContext _dbContext;
     //-------------------------------------------------------------------------------------------------------------------------------------------------------
 
     //=======================================================================================================================================================
     //  CONSTRUCTOR
     //=======================================================================================================================================================
-    public UserViewModel(NavigationService navigationService){
+    public UserViewModel(NavigationService navigationService, UserSessionService userSessionService, WorkstationManagementContext dbContext){
         _navigationService = navigationService;
-        _currentUser = _navigationService.CurrentUser;
+        _userSessionService = userSessionService;
+        CurrentUser = userSessionService.CurrentUser;
+        _dbContext = dbContext;
         LoadFromDB();
     }
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -49,7 +57,8 @@ public partial class UserViewModel : ViewModelBase{
     [RelayCommand]
     public void LogoutBtnClick()
     {
-        _navigationService.NavigateTo<LoginViewModel>(null);
+        _userSessionService.CurrentUser = null;
+        _navigationService.NavigateTo<LoginViewModel>();
     }
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -60,12 +69,10 @@ public partial class UserViewModel : ViewModelBase{
     // Gets all of work positions for the CurrentUser using UserWorkPosition.UserId
     public void LoadFromDB()
     {
-        using(var db = new WorkstationManagementContext())
-        {
-            WorkPositions = new ObservableCollection<WorkPosition>([.. db.UserWorkPositions.Include(uwp => uwp.WorkPosition)
-                                                                                       .Where(uwp => uwp.UserId == CurrentUser.Id)
-                                                                                       .Select(uwp => uwp.WorkPosition)]);
-        }
+
+        WorkPositions = new ObservableCollection<WorkPosition>([.. _dbContext.UserWorkPositions.Include(uwp => uwp.WorkPosition)
+                                                                                               .Where(uwp => uwp.UserId == _userSessionService.CurrentUser.Id)
+                                                                                               .Select(uwp => uwp.WorkPosition)]);
     }
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 }

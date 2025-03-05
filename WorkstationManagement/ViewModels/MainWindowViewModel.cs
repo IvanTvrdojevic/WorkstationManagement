@@ -26,7 +26,7 @@ public partial class MainWindowViewModel : ViewModelBase
         // Loose binding of the _navigationService object with the CurrentViewModel field
         // Every time navigationService.CurrentViewModel is changed the MainWindowViewModel.CurrentViewModel is set to that value
         _navigationService.CurrentViewModelChanged += ChangeCurrentViewModel;
-        _navigationService.NavigateTo<AdminViewModel>();
+        _navigationService.NavigateTo<LoginViewModel>();
     }
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     

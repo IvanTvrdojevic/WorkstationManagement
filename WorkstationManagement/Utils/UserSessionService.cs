@@ -3,7 +3,7 @@ using WorkstationManagement.Models;
 
 namespace WorkstationManagement.Utils;
 
-public class CurrentUser : User 
+public class UserSessionService : User 
 {
-     
+    public User? CurrentUser { get; set; }
 }
