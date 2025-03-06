@@ -1,0 +1,33 @@
+using System.Linq;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Microsoft.EntityFrameworkCore;
+using WorkstationManagement.Data;
+using WorkstationManagement.Utils;
+
+namespace WorkstationManagement.ViewModels;
+
+public partial class Class : ViewModelBase{
+    //=======================================================================================================================================================
+    // SERVICES 
+    // WorkstationManagement/Utils/NavigationService.cs
+    // For navigation
+    private NavigationService _navigationService;
+
+    // For user session
+    private UserSessionService _userSessionService;
+
+    // For database
+    private WorkstationManagementContext _dbContext;
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    //=======================================================================================================================================================
+    //  CONSTRUCTOR
+    //=======================================================================================================================================================
+    public Constructor(NavigationService navigationService, UserSessionService userSessionService, WorkstationManagementContext dbContext){
+        _navigationService = navigationService;
+        _userSessionService = userSessionService;
+        _dbContext = dbContext;
+    }
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+}

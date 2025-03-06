@@ -17,5 +17,6 @@ public static class ServiceCollectionExtensions
         collection.AddTransient<LoginViewModel>();
         collection.AddTransient<AdminViewModel>();
         collection.AddTransient<UserViewModel>();
+        collection.AddTransient<ChangePasswordViewModel>();
     }
 }

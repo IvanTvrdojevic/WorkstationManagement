@@ -36,6 +36,7 @@ public class WorkstationManagementContext : DbContext
             .WithMany(u => u.UserWorkPositions) 
             .HasForeignKey(uwp => uwp.WorkPositionId);
 
+        // Seeding
         modelBuilder.Entity<Role>(r => 
         {
             r.HasData
@@ -49,7 +50,15 @@ public class WorkstationManagementContext : DbContext
         {
             u.HasData
             (
-                new User {Id = 1, FirstName = "ivan", LastName = "tvrdojevic", Username = "admin", Password = Utils.Helper.ComputeSha256Hash("admin"), RoleId = 1}
+                new User {
+                            Id = 1, 
+                            FirstName = "ivan", 
+                            LastName = "tvrdojevic", 
+                            Username = "admin", 
+                            Password = Utils.Helper.ComputeSha256Hash("admin"), 
+                            RoleId = 1,
+                            ChangePwNeeded = false
+                          }
             );
         });
 

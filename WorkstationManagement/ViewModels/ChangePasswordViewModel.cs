@@ -7,14 +7,16 @@ using WorkstationManagement.Utils;
 
 namespace WorkstationManagement.ViewModels;
 
-public partial class LoginViewModel : ViewModelBase{
+public partial class ChangePasswordViewModel : ViewModelBase{
     //=======================================================================================================================================================
     // LOGIN
-    // Observable properties used to check login info and display error message
+    // Observable properties used to check old password and create a new one
     [ObservableProperty]
-    private string _username = "";
+    private string _currentPassword = "";
     [ObservableProperty]
-    private string _password = "";
+    private string _newPassword = "";
+    [ObservableProperty]
+    private string _confirmedPassword = "";
     [ObservableProperty]
     private string _message = "";
 
@@ -34,7 +36,7 @@ public partial class LoginViewModel : ViewModelBase{
     //=======================================================================================================================================================
     //  CONSTRUCTOR
     //=======================================================================================================================================================
-    public LoginViewModel(NavigationService navigationService, UserSessionService userSessionService, WorkstationManagementContext dbContext){
+    public ChangePasswordViewModel(NavigationService navigationService, UserSessionService userSessionService, WorkstationManagementContext dbContext){
         _navigationService = navigationService;
         _userSessionService = userSessionService;
         _dbContext = dbContext;
@@ -42,31 +44,45 @@ public partial class LoginViewModel : ViewModelBase{
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
     //=======================================================================================================================================================
-    //  LOGIN
+    //  CHANGE PASSWORD
     //=======================================================================================================================================================
     //
-    // Check if user exists in database and navigate to corresponding ViewModel depending on the role of the user
+    // Confirm that the user knows the temp passowrd and create a new one
     [RelayCommand]
-    public void OnLoginBtnClick(){
+    public void OnChangePasswordBtnClick(){
         // Implemented in WorkstationManagement.Utils.Helpers.cs
-        string hashedPassword = Helper.ComputeSha256Hash(Password);
+        string hashedCurrentPassword = Helper.ComputeSha256Hash(CurrentPassword);
 
-        var user =  _dbContext.Users.Include(u => u.Role).FirstOrDefault(u => u.Username == Username && u.Password == hashedPassword);
+        var user =  _dbContext.Users.Include(u => u.Role).FirstOrDefault(u => u.Username == _userSessionService.CurrentUser.Username && u.Password == hashedCurrentPassword);
         if(user != null)
         {
-            _userSessionService.CurrentUser = user;
-            if(user.ChangePwNeeded)
-                    _navigationService.NavigateTo<ChangePasswordViewModel>();
-            else
-                if (user.Role.RoleName == "User")
+            bool passwordStrong = false;
+            // Messages for weak password are handled by Helper.CheckStrenght, no need for else statement for passwordStrong
+            (Message, passwordStrong) = Helper.CheckStrength(NewPassword);
+            if(passwordStrong)
+            {
+                if(NewPassword != CurrentPassword)
                 {
-                    _navigationService.NavigateTo<UserViewModel>();
-                }   
-                else if (user.Role.RoleName == "Admin")
-                    _navigationService.NavigateTo<AdminViewModel>();
+                    if(NewPassword == ConfirmedPassword)
+                    {
+                        user.Password = Helper.ComputeSha256Hash(NewPassword);
+                        user.ChangePwNeeded = false;
+                        _dbContext.SaveChanges();
+
+                        if (user.Role.RoleName == "User")
+                            _navigationService.NavigateTo<UserViewModel>();
+                        else if (user.Role.RoleName == "Admin")
+                            _navigationService.NavigateTo<AdminViewModel>();
+                    }
+                    else
+                        Message = "Password confirmation incorrect";
+                }
+                else 
+                    Message = "New Password has to be different";
+            }
         }
         else
-            Message = "Invalid username or password.";
+            Message = "Invalid password.";
     }
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 }

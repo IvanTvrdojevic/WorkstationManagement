@@ -9,6 +9,7 @@ public class User{
     public required string LastName { get; set; }
     public required string Username { get; set; }
     public required string Password { get; set; }
+    public required bool ChangePwNeeded { get; set; }
 
     public int RoleId { get; set; }
     public Role? Role { get; set; } 

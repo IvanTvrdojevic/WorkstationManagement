@@ -427,7 +427,7 @@ public partial class AdminViewModel : ViewModelBase{
             AddUserErrorMessage = "Role is empty";
             return false;
         }
-        bool PasswordGood = true;
+        bool PasswordGood;
         // WorkstationManagement.Utils.Helpers.cs
         (AddUserErrorMessage, PasswordGood) = Helper.CheckStrength(NewUserPassword);
                 bool UsernameUnique = CheckUsernameIsUnique();
@@ -501,7 +501,8 @@ public partial class AdminViewModel : ViewModelBase{
             Username = NewUsername,
             // Implemented in WorkstationManagement.Utils.Helpers.cs
             Password = Helper.ComputeSha256Hash(NewUserPassword),
-            RoleId = _newUserRoleId
+            RoleId = _newUserRoleId,
+            ChangePwNeeded = true
         };
     }
 
